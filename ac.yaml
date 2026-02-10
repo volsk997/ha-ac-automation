@@ -1,0 +1,102 @@
+alias: Мониторинг температуры гостиная BETA
+description: ""
+triggers:
+  - alias: Изменение температуры
+    trigger: state
+    entity_id:
+      - sensor.ble_temperature_a4c1387e6730
+    id: Изменение температуры
+    enabled: true
+  - alias: Балкон открыт 2 минуты
+    trigger: state
+    entity_id:
+      - binary_sensor.okno_ili_dveri_dlia_konditsionera
+    from: "off"
+    to: "on"
+    id: Балкон открыт 2 минуты
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  - alias: Балкон закрыт
+    trigger: state
+    entity_id:
+      - binary_sensor.okno_ili_dveri_dlia_konditsionera
+    from: "on"
+    to: "off"
+    id: Балкон закрыт
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+  - trigger: state
+    entity_id:
+      - binary_sensor.zamok_contact
+    from: "off"
+    to: "on"
+conditions: []
+actions:
+  - action: switch.turn_{{toggle}}
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.konder_dlia_monitora
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - if:
+      - condition: state
+        entity_id: fan.ac_switch
+        state: "on"
+    then:
+      - action: climate.set_hvac_mode
+        metadata: {}
+        data:
+          hvac_mode: "{{mode}}"
+        target:
+          entity_id: climate.ac_fan
+      - action: climate.set_fan_mode
+        metadata: {}
+        data:
+          fan_mode: "{{speed}}"
+        target:
+          entity_id: climate.ac_fan
+variables:
+  season: "{{ states('sensor.season') }}"
+  on_sensor: binary_sensor.okno_ili_dveri_dlia_konditsionera
+  lock: binary_sensor.zamok_contact
+  outside_temp: "{{ states('sensor.iandeks_pogoda_temperature')|float(0) }}"
+  sum_max: "{{ states('input_number.kond_leto_maks') }}"
+  sum_min: "{{ states('input_number.kond_leto_min') }}"
+  wint_max: "{{ states('input_number.kond_zima_maks') }}"
+  wint_min: "{{ states('input_number.kond_zima_min') }}"
+  cur_temp: "{{ states('sensor.ble_temperature_a4c1387e6730')|float(0) }}"
+  spring_max: "{{ states('input_number.konditsioner_minimalnaia_temperatura_oseniu') }}"
+  mode: >-
+    {% if season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
+    23) and outside_temp > -5 %}heat  {% elif season == 'summer' or (season in
+    ['spring', 'autumn'] and outside_temp > spring_max)%}cool  {% else %}off {%
+    endif %}
+  toggle: |-
+    {% if states(on_sensor) == 'off' and states(lock) == 'on' %}
+      {% if season == 'winter' and outside_temp > -5 %} 
+        {{ 'on' if cur_temp < wint_min|float(0) else 'off' }}
+      {% elif season == 'summer' or (season in ['spring', 'autumn'] and outside_temp > spring_max) %}
+        {% if is_state('climate.ac_fan', 'off') %}
+          {{ 'on' if cur_temp > sum_max|float(0) else 'off' }}
+        {% else %}
+          {{ 'off' if cur_temp < sum_min|float(0) else 'on' }}
+        {% endif %}
+
+      {% else %}off{% endif %}
+    {% else %}off{% endif %}
+  speed: >-
+    {% if season == 'summer' or (season in ['spring', 'autumn'] and outside_temp
+    > 20) %}
+      {% if cur_temp > (sum_max|float(0) + 3) %}high
+      {% elif cur_temp > (sum_max|float(0) + 2) %}mid
+      {% else %}low{% endif %}
+    {% else %}auto{% endif %}
+mode: single
