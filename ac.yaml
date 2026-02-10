@@ -86,7 +86,7 @@ variables:
   entity: climate.ac_fan
   mode: >-
     {% if season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
-    wint_max) and outside_temp > -5 %}heat  
+    wint_max) and outside_temp > cr_temp %}heat  
 
     {% elif season == 'summer' or (season in ['spring', 'autumn'] and
     outside_temp > spring_max)%}cool  
@@ -109,16 +109,17 @@ variables:
       {% else %}off{% endif %} 
     {% else %}off{% endif %}
   speed: >-
-    {% if season == 'summer' or (season in ['spring', 'autumn'] and outside_temp
-    > spring_max) %}  
+    {% if mode == 'cool'%}  
       {% if cur_temp > (sum_max|float(0) + 3) %}high  
       {% elif cur_temp > (sum_max|float(0) + 2) %}mid  
       {% else %}low{% endif %}
-    {% elif season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
-    wint_min) and outside_temp > cr_temp %} 
-      {% if cur_temp < (wint_min|float(0) - 3) %}high  
-      {% elif cur_temp < (wint_min|float(0) - 2) %}mid  
-      {% else %}low{% endif %} 
-    {% else %}low{% endif %}
+    {% elif mode == 'heat' %} 
+      {% if is_state('input_boolean.nochnoi_rezhim', 'on') %} low
+      {% else %}   {% if cur_temp < (wint_min|float(0) - 3) %}high  
+                   {% elif cur_temp < (wint_min|float(0) - 2) %}high  
+                   {% else %}high{% endif %} 
+      {% endif %}
+    {% else %}high
+    {% endif %}
   temp: "{% if mode == 'heat' %} 30 {% else %} 16 {% endif %}"
 mode: single
