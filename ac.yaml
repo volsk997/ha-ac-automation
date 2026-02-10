@@ -67,6 +67,12 @@ actions:
           fan_mode: "{{speed}}"
         target:
           entity_id: climate.ac_fan
+      - action: climate.set_temperature
+        metadata: {}
+        data:
+          temperature: "{{temp|int}}"
+        target:
+          entity_id: climate.ac_fan
 variables:
   season: "{{ states('sensor.season') }}"
   on_sensor: binary_sensor.okno_ili_dveri_dlia_konditsionera
@@ -84,7 +90,7 @@ variables:
   entity: climate.ac_fan
   mode: >-
     {% if season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
-    23) and outside_temp > -5 %}heat  
+    wint_min) and outside_temp > -5 %}heat  
 
     {% elif season == 'summer' or (season in ['spring', 'autumn'] and
     outside_temp > spring_max)%}cool  
@@ -118,4 +124,5 @@ variables:
       {% elif cur_temp < (wint_min|float(0) - 2) %}mid  
       {% else %}low{% endif %} 
     {% else %}auto{% endif %}
+  temp: "{% if mode == 'heat' %} 30 {% else %} 16 {% endif %}"
 mode: single
