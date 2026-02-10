@@ -5,6 +5,10 @@ triggers:
     trigger: state
     entity_id:
       - sensor.ble_temperature_a4c1387e6730
+      - input_number.kond_leto_maks
+      - input_number.kond_leto_min
+      - input_number.kond_zima_maks
+      - input_number.kond_zima_min
     id: Изменение температуры
     enabled: true
   - alias: Балкон открыт 2 минуты
@@ -67,13 +71,15 @@ variables:
   season: "{{ states('sensor.season') }}"
   on_sensor: binary_sensor.okno_ili_dveri_dlia_konditsionera
   lock: binary_sensor.zamok_contact
-  outside_temp: "{{ states('sensor.iandeks_pogoda_temperature')|float(20) }}"
+  outside_temp: "{{ state_attr('weather.pogoda','temperature')|float(20) }}"
   sum_max: "{{ states('input_number.kond_leto_maks') |float(28)}}"
   sum_min: "{{ states('input_number.kond_leto_min') |float(26)}}"
   wint_max: "{{ states('input_number.kond_zima_maks') |float(26)}}"
   wint_min: "{{ states('input_number.kond_zima_min') |float(24)}}"
   cur_temp: "{{ states('sensor.ble_temperature_a4c1387e6730')|float(0) }}"
-  spring_max: "{{ states('input_number.konditsioner_minimalnaia_temperatura_oseniu') |float(0)}}"
+  spring_max: >-
+    {{ states('input_number.konditsioner_minimalnaia_temperatura_oseniu')
+    |float(0)}}
   cr_temp: -5
   entity: climate.ac_fan
   mode: >-
@@ -86,7 +92,7 @@ variables:
     {% else %}off {% endif %}
   toggle: |-
     {% if states(on_sensor) == 'off' and states(lock) == 'on' %}
-      {% if season == ('winter' or (season in ['spring', 'autumn'] and cur_temp < wint_min)) and outside_temp > cr_temp %} 
+      {% if season in ['winter', 'spring', 'autumn'] and cur_temp < wint_min and outside_temp > cr_temp %}
         {% if is_state(entity, 'off') %}   
         {{ 'on' if cur_temp < wint_min|float(0) else 'off' }}   
         {% else %}   
