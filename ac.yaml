@@ -86,7 +86,7 @@ variables:
   entity: climate.ac_fan
   mode: >-
     {% if season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
-    wint_max) and outside_temp > cr_temp %}heat  
+    wint_min) and outside_temp > cr_temp %}heat  
 
     {% elif season == 'summer' or (season in ['spring', 'autumn'] and
     outside_temp > spring_max)%}cool  
@@ -108,7 +108,7 @@ variables:
         {% endif %}  
       {% else %}off{% endif %} 
     {% else %}off{% endif %}
-  speed: >-
+  speed: |-
     {% if mode == 'cool'%}  
       {% if cur_temp > (sum_max|float(0) + 3) %}high  
       {% elif cur_temp > (sum_max|float(0) + 2) %}mid  
@@ -119,7 +119,6 @@ variables:
                    {% elif cur_temp < (wint_min|float(0) - 2) %}high  
                    {% else %}high{% endif %} 
       {% endif %}
-    {% else %}high
-    {% endif %}
+    {% else %}high {% endif %}
   temp: "{% if mode == 'heat' %} 30 {% else %} 16 {% endif %}"
 mode: single
