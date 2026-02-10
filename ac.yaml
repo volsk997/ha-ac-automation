@@ -78,7 +78,7 @@ variables:
   sum_min: "{{ states('input_number.kond_leto_min') |float(26)}}"
   wint_max: "{{ states('input_number.kond_zima_maks') |float(26)}}"
   wint_min: "{{ states('input_number.kond_zima_min') |float(24)}}"
-  cur_temp: "{{ states('sensor.ble_temperature_a4c1387e6730')|float(0) }}"
+  cur_temp: "{{ states('sensor.ble_temperature_a4c1387e6730')|float(25) }}"
   spring_max: >-
     {{ states('input_number.konditsioner_minimalnaia_temperatura_oseniu')
     |float(0)}}
@@ -86,7 +86,7 @@ variables:
   entity: climate.ac_fan
   mode: >-
     {% if season == 'winter' or (season in ['spring', 'autumn'] and cur_temp <
-    wint_min) and outside_temp > cr_temp %}heat  
+    wint_max) and outside_temp > cr_temp %}heat  
 
     {% elif season == 'summer' or (season in ['spring', 'autumn'] and
     outside_temp > spring_max)%}cool  
